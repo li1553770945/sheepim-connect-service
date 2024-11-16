@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
-	project "github.com/li1553770945/sheepim-connect-service/kitex_gen/project"
+	message "github.com/li1553770945/sheepim-connect-service/kitex_gen/message"
 )
 
-// ProjectServiceImpl implements the last service interface defined in the IDL.
-type ProjectServiceImpl struct{}
+// MessageServiceImpl implements the last service interface defined in the IDL.
+type MessageServiceImpl struct{}
 
-// SendMessage implements the ProjectServiceImpl interface.
-func (s *ProjectServiceImpl) SendMessage(ctx context.Context, req *project.SendMessageReq) (resp *project.SendMessageResp, err error) {
+// SendMessage implements the MessageServiceImpl interface.
+func (s *MessageServiceImpl) SendMessage(ctx context.Context, req *message.SendMessageReq) (resp *message.SendMessageResp, err error) {
 	// TODO: Your code here...
 	return
 }

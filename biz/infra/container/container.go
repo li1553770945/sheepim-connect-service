@@ -12,7 +12,8 @@ type Container struct {
 	TraceStruct    *trace.TraceStruct
 	Logger         *log.TraceLogger
 	Config         *config.Config
-	ProjectService project.IProjectService
+	ConnectService service.IConnectService
+	MessageService service.IMessageService
 }
 
 var APP *Container
@@ -35,13 +36,16 @@ func NewContainer(config *config.Config,
 	logger *log.TraceLogger,
 	traceStruct *trace.TraceStruct,
 
-	projectService project.IProjectService,
+	connectService service.IConnectService,
+	messageService service.IMessageService,
 ) *Container {
 	return &Container{
-		Config:         config,
-		Logger:         logger,
-		ProjectService: projectService,
-		TraceStruct:    traceStruct,
+		Config:      config,
+		Logger:      logger,
+		TraceStruct: traceStruct,
+
+		ConnectService: connectService,
+		MessageService: messageService,
 	}
 
 }

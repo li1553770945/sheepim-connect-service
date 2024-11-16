@@ -1,4 +1,4 @@
-# sheepim在线服务
+# sheepim连接服务
 
 ## 初始化项目
 ```bash

@@ -8,10 +8,9 @@ package container
 
 import (
 	"github.com/li1553770945/sheepim-connect-service/biz/infra/config"
-	"github.com/li1553770945/sheepim-connect-service/biz/infra/database"
 	"github.com/li1553770945/sheepim-connect-service/biz/infra/log"
+	"github.com/li1553770945/sheepim-connect-service/biz/infra/rpc"
 	"github.com/li1553770945/sheepim-connect-service/biz/infra/trace"
-	"github.com/li1553770945/sheepim-connect-service/biz/internal/repo"
 	"github.com/li1553770945/sheepim-connect-service/biz/internal/service"
 )
 
@@ -21,9 +20,10 @@ func GetContainer(env string) *Container {
 	configConfig := config.GetConfig(env)
 	traceLogger := log.InitLog()
 	traceStruct := trace.InitTrace(configConfig)
-	db := database.NewDatabase(configConfig)
-	iRepository := repo.NewRepository(db)
-	iProjectService := project.NewProjectService(iRepository)
-	container := NewContainer(configConfig, traceLogger, traceStruct, iProjectService)
+	clientConnMap := service.NewClientConnMap()
+	client := rpc.NewAuthClient(configConfig)
+	iConnectService := service.NewConnectService(clientConnMap, client)
+	iMessageService := service.NewMessageService(clientConnMap)
+	container := NewContainer(configConfig, traceLogger, traceStruct, iConnectService, iMessageService)
 	return container
 }
