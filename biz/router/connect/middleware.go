@@ -4,6 +4,7 @@ package connect
 
 import (
 	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/li1553770945/sheepim-connect-service/biz/middleware"
 )
 
 func rootMw() []app.HandlerFunc {
@@ -13,5 +14,7 @@ func rootMw() []app.HandlerFunc {
 
 func _connectMw() []app.HandlerFunc {
 	// your code...
-	return nil
+	return []app.HandlerFunc{
+		middleware.GetGlobalGlobalAuthMiddleware(),
+	}
 }

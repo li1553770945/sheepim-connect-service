@@ -3,6 +3,7 @@
 ## 初始化项目
 ```bash
 kitex -module "github.com/li1553770945/sheepim-connect-service" -service sheepim-connect-service idl/message.thrift
+hz update -idl idl/connect.thrift
 cd biz/infra/container
 wire
 ```

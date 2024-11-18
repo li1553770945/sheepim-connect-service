@@ -3,6 +3,7 @@ package log
 import (
 	"context"
 	"fmt"
+	"github.com/cloudwego/hertz/pkg/common/hlog"
 	"github.com/cloudwego/kitex/pkg/klog"
 	kitexlogrus "github.com/kitex-contrib/obs-opentelemetry/logging/logrus"
 	"go.opentelemetry.io/otel/attribute"
@@ -89,5 +90,13 @@ func InitLog() *TraceLogger {
 	}
 	multiWriter := io.MultiWriter(logFile, os.Stdout)
 	klog.SetOutput(multiWriter)
+
+	httpLogFileName := filepath.Join("logs", "http-log-"+time.Now().Format("2006-01-02-15-04-05")+".log")
+	httpLogFile, err := os.OpenFile(httpLogFileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	if err != nil {
+		klog.Fatalf("failed to open log file: %v", err)
+	}
+	httpMultiWriter := io.MultiWriter(httpLogFile, os.Stdout)
+	hlog.SetOutput(httpMultiWriter)
 	return logger
 }

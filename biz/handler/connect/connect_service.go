@@ -15,5 +15,8 @@ import (
 func Connect(ctx context.Context, c *app.RequestContext) {
 	App := container.GetGlobalContainer()
 	resp := App.ConnectService.Connect(ctx, c)
-	c.JSON(consts.StatusOK, resp)
+	if resp != nil {
+		c.JSON(consts.StatusOK, resp)
+	}
+
 }

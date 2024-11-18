@@ -9,7 +9,7 @@ import (
 )
 
 type ConnectResp struct {
-	Code    int32  `thrift:"Code,1,required" form:"Code,required" json:"Code,required" query:"Code,required"`
+	Code    int32  `thrift:"code,1,required" form:"code,required" json:"code,required" query:"code,required"`
 	Message string `thrift:"message,2,required" form:"message,required" json:"message,required" query:"message,required"`
 }
 
@@ -26,7 +26,7 @@ func (p *ConnectResp) GetMessage() (v string) {
 }
 
 var fieldIDToName_ConnectResp = map[int16]string{
-	1: "Code",
+	1: "code",
 	2: "message",
 }
 
@@ -166,7 +166,7 @@ WriteStructEndError:
 }
 
 func (p *ConnectResp) writeField1(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("Code", thrift.I32, 1); err != nil {
+	if err = oprot.WriteFieldBegin("code", thrift.I32, 1); err != nil {
 		goto WriteFieldBeginError
 	}
 	if err := oprot.WriteI32(p.Code); err != nil {

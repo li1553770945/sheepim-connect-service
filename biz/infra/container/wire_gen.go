@@ -20,10 +20,11 @@ func GetContainer(env string) *Container {
 	configConfig := config.GetConfig(env)
 	traceLogger := log.InitLog()
 	traceStruct := trace.InitTrace(configConfig)
-	clientConnMap := service.NewClientConnMap()
 	client := rpc.NewAuthClient(configConfig)
-	iConnectService := service.NewConnectService(clientConnMap, client)
+	clientConnMap := service.NewClientConnMap()
+	onlineserviceClient := rpc.NewOnlineClient(configConfig)
+	iConnectService := service.NewConnectService(clientConnMap, client, onlineserviceClient, configConfig)
 	iMessageService := service.NewMessageService(clientConnMap)
-	container := NewContainer(configConfig, traceLogger, traceStruct, iConnectService, iMessageService)
+	container := NewContainer(configConfig, traceLogger, traceStruct, client, iConnectService, iMessageService)
 	return container
 }

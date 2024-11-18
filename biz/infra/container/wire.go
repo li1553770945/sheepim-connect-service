@@ -21,6 +21,7 @@ func GetContainer(env string) *Container {
 		trace.InitTrace,
 
 		rpc.NewAuthClient,
+		rpc.NewOnlineClient,
 
 		//service
 		service.NewClientConnMap,

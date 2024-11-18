@@ -25,9 +25,10 @@ import (
 	"github.com/kitex-contrib/obs-opentelemetry/provider"
 	"github.com/kitex-contrib/obs-opentelemetry/tracing"
 	etcd "github.com/kitex-contrib/registry-etcd"
-	"github.com/li1553770945/sheepim-api-gateway/global_middleware"
 	"github.com/li1553770945/sheepim-connect-service/biz/infra/container"
-	"github.com/li1553770945/sheepim-connect-service/kitex_gen/project/projectservice"
+	"github.com/li1553770945/sheepim-connect-service/biz/middleware"
+	"github.com/li1553770945/sheepim-connect-service/global_middleware"
+	"github.com/li1553770945/sheepim-connect-service/kitex_gen/message/messageservice"
 	"net"
 	"os"
 )
@@ -46,7 +47,7 @@ func ListenWs() {
 
 	h.Use(hertztracing.ServerMiddleware(App.TraceStruct.Config))
 	h.Use(global_middleware.TraceIdMiddleware())
-	h.GET("/ws/connect")
+	register(h)
 	h.Spin()
 }
 func main() {
@@ -56,6 +57,7 @@ func main() {
 	}
 	container.InitGlobalContainer(env)
 	App := container.GetGlobalContainer()
+	middleware.InitGlobalAuthMiddleware(App.AuthRpcClient)
 
 	serviceName := App.Config.ServerConfig.ServiceName
 
@@ -75,13 +77,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	svr := projectservice.NewServer(
-		new(ProjectServiceImpl),
+	svr := messageservice.NewServer(
+		new(MessageServiceImpl),
 		kitexserver.WithSuite(tracing.NewServerSuite()),
 		kitexserver.WithServerBasicInfo(&rpcinfo.EndpointBasicInfo{ServiceName: serviceName}),
 		kitexserver.WithRegistry(r),
 		kitexserver.WithServiceAddr(addr),
 	)
+	go ListenWs()
 	if err := svr.Run(); err != nil {
 		klog.Fatalf("服务启动失败:", err)
 	}

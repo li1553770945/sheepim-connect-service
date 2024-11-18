@@ -23,7 +23,7 @@ func NewServiceInfo() *kitex.ServiceInfo {
 	}
 	extra := map[string]interface{}{
 		"PackageName":     "message",
-		"ServiceFilePath": `idl\message.thrift`,
+		"ServiceFilePath": `idl/message.thrift`,
 	}
 	svcInfo := &kitex.ServiceInfo{
 		ServiceName:     serviceName,
