@@ -11,7 +11,6 @@ import (
 	"github.com/li1553770945/sheepim-connect-service/biz/middleware"
 	"github.com/li1553770945/sheepim-connect-service/biz/model/connect"
 	"github.com/li1553770945/sheepim-online-service/kitex_gen/online"
-	"log"
 	"strings"
 )
 
@@ -66,32 +65,34 @@ func (s *ConnectService) Connect(ctx context.Context, c *app.RequestContext) *co
 			mt, message, err := conn.ReadMessage()
 			fmt.Println(mt, message, err)
 			if err != nil {
-				hlog.CtxErrorf(ctx, "读取失败:%v", err)
+				hlog.CtxErrorf(ctx, "读取消息失败:%v", err)
+				break
 			}
 			hlog.CtxInfof(ctx, "收到消息: %s", message)
 			err = conn.WriteMessage(mt, message)
 			if err != nil {
-				log.Println("write:", err)
+				hlog.CtxErrorf(ctx, "写入消息失败:%v", err)
 				break
 			}
 		}
+		s.ClientConnMap.Remove(clientId)
+		onlineRpcResp, err = s.OnlineClient.SetClientStatus(ctx, &online.SetClientStatusReq{
+			ClientId:       clientId,
+			ServerEndpoint: endpoint,
+			IsOnline:       false,
+		})
+		if err != nil {
+			hlog.CtxErrorf(ctx, "移除调用online服务失败:%v", err)
+			resp.Code = constant.SystemError
+			resp.Message = fmt.Sprintf("移除调用online服务失败:%v", err)
+		}
+		if onlineRpcResp.BaseResp.Code != 0 {
+			hlog.CtxErrorf(ctx, "移除调用online服务失败，返回值:%v", onlineRpcResp.BaseResp.Code)
+			resp.Code = constant.SystemError
+			resp.Message = fmt.Sprintf("移除调用online服务失败，返回值:%v", onlineRpcResp.BaseResp.Code)
+		}
 	})
-	s.ClientConnMap.Remove(clientId)
-	onlineRpcResp, err := s.OnlineClient.SetClientStatus(ctx, &online.SetClientStatusReq{
-		ClientId:       clientId,
-		ServerEndpoint: endpoint,
-		IsOnline:       false,
-	})
-	if err != nil {
-		hlog.CtxErrorf(ctx, "移除调用online服务失败:%v", err)
-		resp.Code = constant.SystemError
-		resp.Message = fmt.Sprintf("移除调用online服务失败:%v", err)
-	}
-	if onlineRpcResp.BaseResp.Code != 0 {
-		hlog.CtxErrorf(ctx, "移除调用online服务失败，返回值:%v", onlineRpcResp.BaseResp.Code)
-		resp.Code = constant.SystemError
-		resp.Message = fmt.Sprintf("移除调用online服务失败，返回值:%v", onlineRpcResp.BaseResp.Code)
-	}
+
 	if err != nil {
 		hlog.CtxErrorf(ctx, "升级ws连接失败:%v", err)
 		return &connect.ConnectResp{Code: constant.SystemError, Message: fmt.Sprintf("升级ws连接失败:%v", err)}
