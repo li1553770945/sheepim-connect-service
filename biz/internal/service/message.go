@@ -8,7 +8,8 @@ import (
 	"github.com/li1553770945/sheepim-connect-service/kitex_gen/message"
 )
 
-func (s MessageService) SendMessage(ctx context.Context, req *message.SendMessageReq) (resp *message.SendMessageResp, err error) {
+func (s *MessageService) SendMessage(ctx context.Context, req *message.SendMessageReq) (resp *message.SendMessageResp, err error) {
+
 	clientId := req.ClientId
 	conn, exist := s.ClientConnMap.Get(clientId)
 	if !exist || conn == nil {

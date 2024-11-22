@@ -64,7 +64,7 @@ func AuthMiddleware(authClient authservice.Client) app.HandlerFunc {
 			return
 		}
 		if resp.BaseResp.Code != 0 {
-			hlog.CtxInfof(ctx, "获取客户端ID失败: %v，token 可能已失效", resp.BaseResp.Code)
+			hlog.CtxInfof(ctx, "获取客户端ID失败: %d,%s，token 可能已失效", resp.BaseResp.Code, resp.BaseResp.Message)
 			c.JSON(200, utils.H{"code": constant.Unauthorized, "message": fmt.Sprintf("获取客户端ID失败: %v，token 可能已失效", resp.BaseResp.Message)})
 			c.Abort()
 			return

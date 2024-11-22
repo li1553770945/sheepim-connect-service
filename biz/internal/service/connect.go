@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/common/hlog"
-	"github.com/cloudwego/hertz/pkg/common/utils"
 	"github.com/hertz-contrib/websocket"
 	"github.com/li1553770945/sheepim-connect-service/biz/constant"
 	"github.com/li1553770945/sheepim-connect-service/biz/middleware"
 	"github.com/li1553770945/sheepim-connect-service/biz/model/connect"
 	"github.com/li1553770945/sheepim-online-service/kitex_gen/online"
 	"github.com/li1553770945/sheepim-push-proxy-service/kitex_gen/push_proxy"
-	"strings"
 )
 
 var upgrader = websocket.HertzUpgrader{} // use default options
@@ -29,18 +27,6 @@ func (s *ConnectService) Connect(ctx context.Context, c *app.RequestContext) *co
 		return &connect.ConnectResp{Code: constant.InvalidInput, Message: "参数无roomId"}
 	}
 
-	localIp := utils.LocalIP()
-	portIndex := strings.LastIndex(s.Config.ServerConfig.RpcListenAddress, ":")
-	if portIndex == -1 {
-		hlog.CtxFatalf(ctx, "当前监听路径为%s，无法找到冒号用于分割端口", s.Config.ServerConfig.RpcListenAddress)
-		return &connect.ConnectResp{
-			Code:    constant.SystemError,
-			Message: fmt.Sprintf("当前监听路径为%s，无法找到冒号用于分割端口", s.Config.ServerConfig.RpcListenAddress),
-		}
-	}
-	// 返回从最后一个冒号之后的部分
-	port := s.Config.ServerConfig.RpcListenAddress[portIndex+1:]
-	endpoint := fmt.Sprintf("%s:%s", localIp, port)
 	resp := &connect.ConnectResp{
 		Code: constant.Success,
 	}
@@ -49,7 +35,7 @@ func (s *ConnectService) Connect(ctx context.Context, c *app.RequestContext) *co
 		hlog.CtxInfof(ctx, "请求升级连接:%s", clientId)
 		onlineRpcResp, err := s.OnlineClient.SetClientStatus(ctx, &online.SetClientStatusReq{
 			ClientId:       clientId,
-			ServerEndpoint: endpoint,
+			ServerEndpoint: s.Endpoint,
 			IsOnline:       true,
 		})
 		if err != nil {
@@ -69,7 +55,6 @@ func (s *ConnectService) Connect(ctx context.Context, c *app.RequestContext) *co
 		hlog.CtxInfof(ctx, "连接成功:%s", clientId)
 		for {
 			mt, message, err := conn.ReadMessage()
-			fmt.Println(mt, message, err)
 			if err != nil {
 				hlog.CtxErrorf(ctx, "读取消息失败:%v", err)
 				break
@@ -104,7 +89,7 @@ func (s *ConnectService) Connect(ctx context.Context, c *app.RequestContext) *co
 		s.ClientConnMap.Remove(clientId)
 		onlineRpcResp, err = s.OnlineClient.SetClientStatus(ctx, &online.SetClientStatusReq{
 			ClientId:       clientId,
-			ServerEndpoint: endpoint,
+			ServerEndpoint: s.Endpoint,
 			IsOnline:       false,
 		})
 		if err != nil {

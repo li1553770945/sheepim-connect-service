@@ -2,13 +2,17 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/cloudwego/kitex/pkg/klog"
 	"github.com/li1553770945/sheepim-auth-service/kitex_gen/auth/authservice"
 	"github.com/li1553770945/sheepim-connect-service/biz/infra/config"
+	"github.com/li1553770945/sheepim-connect-service/biz/infra/utils"
 	"github.com/li1553770945/sheepim-connect-service/biz/model/connect"
 	"github.com/li1553770945/sheepim-connect-service/kitex_gen/message"
 	"github.com/li1553770945/sheepim-online-service/kitex_gen/online/onlineservice"
 	"github.com/li1553770945/sheepim-push-proxy-service/kitex_gen/push_proxy/pushproxyservice"
+	"strings"
 )
 
 type ConnectService struct {
@@ -17,6 +21,7 @@ type ConnectService struct {
 	OnlineClient    onlineservice.Client
 	PushProxyClient pushproxyservice.Client
 	Config          *config.Config
+	Endpoint        string
 }
 
 type IConnectService interface {
@@ -29,12 +34,29 @@ func NewConnectService(clientConnMap *ClientConnMap,
 	pushProxyClient pushproxyservice.Client,
 	cfg *config.Config,
 ) IConnectService {
+	localIpList, err := utils.GetLocalIP()
+
+	if err != nil {
+		panic(fmt.Sprintf("获取本机ip失败：%v", err))
+	}
+
+	localIp := localIpList[len(localIpList)-1]
+	portIndex := strings.LastIndex(cfg.ServerConfig.RpcListenAddress, ":")
+	if portIndex == -1 {
+		panic(fmt.Sprintf("当前监听路径为%s，无法找到冒号用于分割端口", cfg.ServerConfig.RpcListenAddress))
+
+	}
+	// 返回从最后一个冒号之后的部分
+	port := cfg.ServerConfig.RpcListenAddress[portIndex+1:]
+	endpoint := fmt.Sprintf("%s:%s", localIp, port)
+	klog.Warnf("当前选择的endpoint为：%s，请确认是否正确！", endpoint)
 	return &ConnectService{
 		ClientConnMap:   clientConnMap,
 		AuthClient:      authClient,
 		OnlineClient:    onlineClient,
 		PushProxyClient: pushProxyClient,
 		Config:          cfg,
+		Endpoint:        endpoint,
 	}
 }
 

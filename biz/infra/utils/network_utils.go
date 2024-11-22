@@ -2,7 +2,7 @@ package utils
 
 import "net"
 
-func getLocalIP() ([]string, error) {
+func GetLocalIP() ([]string, error) {
 	var ips []string
 	interfaces, err := net.Interfaces()
 	if err != nil {
