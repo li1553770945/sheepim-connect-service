@@ -30,8 +30,9 @@ type DatabaseConfig struct {
 	Port     int32  `yaml:"port"`
 }
 type RpcConfig struct {
-	AuthServiceName   string `yaml:"auth-service-name"`
-	OnlineServiceName string `yaml:"online-service-name"`
+	AuthServiceName      string `yaml:"auth-service-name"`
+	OnlineServiceName    string `yaml:"online-service-name"`
+	PushProxyServiceName string `yaml:"push-proxy-service-name"`
 }
 type Config struct {
 	Env                 string

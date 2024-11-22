@@ -11,6 +11,7 @@ import (
 	"github.com/li1553770945/sheepim-connect-service/biz/middleware"
 	"github.com/li1553770945/sheepim-connect-service/biz/model/connect"
 	"github.com/li1553770945/sheepim-online-service/kitex_gen/online"
+	"github.com/li1553770945/sheepim-push-proxy-service/kitex_gen/push_proxy"
 	"strings"
 )
 
@@ -20,7 +21,12 @@ func (s *ConnectService) Connect(ctx context.Context, c *app.RequestContext) *co
 
 	clientId, err := middleware.GetClientIdFromCtx(ctx)
 	if err != nil {
-		return &connect.ConnectResp{Code: constant.Success, Message: "token认证失败"}
+		return &connect.ConnectResp{Code: constant.Unauthorized, Message: "token认证失败"}
+	}
+	roomId := c.Query("roomId")
+	if roomId == "" {
+		hlog.CtxInfof(ctx, "参数无roomId")
+		return &connect.ConnectResp{Code: constant.InvalidInput, Message: "参数无roomId"}
 	}
 
 	localIp := utils.LocalIP()
@@ -69,11 +75,31 @@ func (s *ConnectService) Connect(ctx context.Context, c *app.RequestContext) *co
 				break
 			}
 			hlog.CtxInfof(ctx, "收到消息: %s", message)
-			err = conn.WriteMessage(mt, message)
+
+			//TODO: 发送消息应该检测是什么类型
+			rpcResp, err := s.PushProxyClient.PushMessage(ctx, &push_proxy.PushMessageReq{
+				ClientId: clientId,
+				Event:    constant.IMMessage,
+				Type:     "text",
+				RoomId:   roomId,
+				Message:  string(message),
+			})
+			//TODO: 错误应该以json格式发送
 			if err != nil {
-				hlog.CtxErrorf(ctx, "写入消息失败:%v", err)
-				break
+				err = conn.WriteMessage(mt, []byte(fmt.Sprintf("发送消息失败:%v", err)))
+				if err != nil {
+					hlog.CtxErrorf(ctx, "写入消息失败:%v", err)
+					break
+				}
 			}
+			if rpcResp.BaseResp.Code != 0 {
+				err = conn.WriteMessage(mt, []byte(fmt.Sprintf("发送消息失败:%s", rpcResp.BaseResp.Message)))
+				if err != nil {
+					hlog.CtxErrorf(ctx, "写入消息失败:%v", err)
+					break
+				}
+			}
+
 		}
 		s.ClientConnMap.Remove(clientId)
 		onlineRpcResp, err = s.OnlineClient.SetClientStatus(ctx, &online.SetClientStatusReq{

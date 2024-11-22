@@ -8,13 +8,15 @@ import (
 	"github.com/li1553770945/sheepim-connect-service/biz/model/connect"
 	"github.com/li1553770945/sheepim-connect-service/kitex_gen/message"
 	"github.com/li1553770945/sheepim-online-service/kitex_gen/online/onlineservice"
+	"github.com/li1553770945/sheepim-push-proxy-service/kitex_gen/push_proxy/pushproxyservice"
 )
 
 type ConnectService struct {
-	ClientConnMap *ClientConnMap
-	AuthClient    authservice.Client
-	OnlineClient  onlineservice.Client
-	Config        *config.Config
+	ClientConnMap   *ClientConnMap
+	AuthClient      authservice.Client
+	OnlineClient    onlineservice.Client
+	PushProxyClient pushproxyservice.Client
+	Config          *config.Config
 }
 
 type IConnectService interface {
@@ -24,13 +26,15 @@ type IConnectService interface {
 func NewConnectService(clientConnMap *ClientConnMap,
 	authClient authservice.Client,
 	onlineClient onlineservice.Client,
+	pushProxyClient pushproxyservice.Client,
 	cfg *config.Config,
 ) IConnectService {
 	return &ConnectService{
-		ClientConnMap: clientConnMap,
-		AuthClient:    authClient,
-		OnlineClient:  onlineClient,
-		Config:        cfg,
+		ClientConnMap:   clientConnMap,
+		AuthClient:      authClient,
+		OnlineClient:    onlineClient,
+		PushProxyClient: pushProxyClient,
+		Config:          cfg,
 	}
 }
 
