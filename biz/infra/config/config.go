@@ -38,7 +38,6 @@ type Config struct {
 	Env                 string
 	ServerConfig        ServerConfig        `yaml:"server"`
 	OpenTelemetryConfig OpenTelemetryConfig `yaml:"open-telemetry"`
-	DatabaseConfig      DatabaseConfig      `yaml:"database"`
 	EtcdConfig          EtcdConfig          `yaml:"etcd"`
 	RpcConfig           RpcConfig           `yaml:"rpc"`
 }
