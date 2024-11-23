@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/common/hlog"
+	"github.com/cloudwego/hertz/pkg/common/json"
+	"github.com/cloudwego/kitex/pkg/klog"
 	"github.com/hertz-contrib/websocket"
 	"github.com/li1553770945/sheepim-connect-service/biz/constant"
+	"github.com/li1553770945/sheepim-connect-service/biz/internal/domain"
 	"github.com/li1553770945/sheepim-connect-service/biz/middleware"
 	"github.com/li1553770945/sheepim-connect-service/biz/model/connect"
 	"github.com/li1553770945/sheepim-online-service/kitex_gen/online"
@@ -59,32 +62,22 @@ func (s *ConnectService) Connect(ctx context.Context, c *app.RequestContext) *co
 				hlog.CtxErrorf(ctx, "读取消息失败:%v", err)
 				break
 			}
-			hlog.CtxInfof(ctx, "收到消息: %s", message)
+			hlog.CtxInfof(ctx, "收到来自%s的消息", clientId)
 
-			//TODO: 发送消息应该检测是什么类型
-			rpcResp, err := s.PushProxyClient.PushMessage(ctx, &push_proxy.PushMessageReq{
-				ClientId: clientId,
-				Event:    constant.IMMessage,
-				Type:     "text",
-				RoomId:   roomId,
-				Message:  string(message),
-			})
-			//TODO: 错误应该以json格式发送
-			if err != nil {
-				err = conn.WriteMessage(mt, []byte(fmt.Sprintf("发送消息失败:%v", err)))
+			returnMessage := s.handleMessage(ctx, message, clientId, roomId)
+
+			if returnMessage != nil {
+				returnMessageBytes, err := json.Marshal(returnMessage)
+				if err != nil {
+					klog.CtxErrorf(ctx, "序列化returnMessage失败:%v", err)
+					break
+				}
+				err = conn.WriteMessage(mt, returnMessageBytes)
 				if err != nil {
 					hlog.CtxErrorf(ctx, "写入消息失败:%v", err)
 					break
 				}
 			}
-			if rpcResp.BaseResp.Code != 0 {
-				err = conn.WriteMessage(mt, []byte(fmt.Sprintf("发送消息失败:%s", rpcResp.BaseResp.Message)))
-				if err != nil {
-					hlog.CtxErrorf(ctx, "写入消息失败:%v", err)
-					break
-				}
-			}
-
 		}
 		s.ClientConnMap.Remove(clientId)
 		onlineRpcResp, err = s.OnlineClient.SetClientStatus(ctx, &online.SetClientStatusReq{
@@ -109,4 +102,53 @@ func (s *ConnectService) Connect(ctx context.Context, c *app.RequestContext) *co
 		return &connect.ConnectResp{Code: constant.SystemError, Message: fmt.Sprintf("升级ws连接失败:%v", err)}
 	}
 	return nil
+}
+
+func (s *ConnectService) handleMessage(ctx context.Context, messageBytes []byte, clientId string, roomId string) *domain.IMMessageEntity {
+	var message = &domain.IMMessageEntity{}
+	err := json.Unmarshal(messageBytes, message)
+	if err != nil {
+		return &domain.IMMessageEntity{
+			Event: constant.IMError,
+			Type:  constant.IMError,
+			Data:  fmt.Sprintf("序列化消息失败：%v，消息应包含event,type,data", err),
+		}
+	}
+
+	if message.Event == constant.IMMessage {
+		rpcResp, err := s.PushProxyClient.PushMessage(ctx, &push_proxy.PushMessageReq{
+			ClientId: clientId,
+			Event:    constant.IMMessage,
+			Type:     message.Type,
+			RoomId:   roomId,
+			Message:  message.Data,
+		})
+		if err != nil {
+			return &domain.IMMessageEntity{
+				Event: constant.IMError,
+				Type:  constant.IMError,
+				Data:  fmt.Sprintf("推送消息到push-proxy失败：%v", err),
+			}
+		}
+		if rpcResp.BaseResp.Code != 0 {
+			return &domain.IMMessageEntity{
+				Event: constant.IMError,
+				Type:  constant.IMError,
+				Data:  fmt.Sprintf("推送消息到push-proxy失败：%s", rpcResp.BaseResp.Message),
+			}
+		}
+		return nil
+	} else if message.Event == constant.IMPing {
+		return &domain.IMMessageEntity{
+			Event: constant.IMPong,
+			Type:  constant.IMPong,
+			Data:  "pong",
+		}
+	} else {
+		return &domain.IMMessageEntity{
+			Event: constant.IMError,
+			Type:  constant.IMError,
+			Data:  "未知的消息event",
+		}
+	}
 }

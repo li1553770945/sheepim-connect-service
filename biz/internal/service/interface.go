@@ -8,6 +8,7 @@ import (
 	"github.com/li1553770945/sheepim-auth-service/kitex_gen/auth/authservice"
 	"github.com/li1553770945/sheepim-connect-service/biz/infra/config"
 	"github.com/li1553770945/sheepim-connect-service/biz/infra/utils"
+	"github.com/li1553770945/sheepim-connect-service/biz/internal/domain"
 	"github.com/li1553770945/sheepim-connect-service/biz/model/connect"
 	"github.com/li1553770945/sheepim-connect-service/kitex_gen/message"
 	"github.com/li1553770945/sheepim-online-service/kitex_gen/online/onlineservice"
@@ -26,6 +27,7 @@ type ConnectService struct {
 
 type IConnectService interface {
 	Connect(ctx context.Context, c *app.RequestContext) *connect.ConnectResp
+	handleMessage(ctx context.Context, messageBytes []byte, clientId string, roomId string) *domain.IMMessageEntity
 }
 
 func NewConnectService(clientConnMap *ClientConnMap,
