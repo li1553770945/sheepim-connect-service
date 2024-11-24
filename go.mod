@@ -15,6 +15,7 @@ require (
 	github.com/li1553770945/sheepim-auth-service v0.0.0-20241116144932-0546370281c0
 	github.com/li1553770945/sheepim-online-service v0.0.0-20241119064209-4c53aa976084
 	github.com/li1553770945/sheepim-push-proxy-service v0.0.0-20241122100112-03e4f2db6ab7
+	github.com/li1553770945/sheepim-room-service v0.0.0-20241124114359-bcc7560af625
 	go.opentelemetry.io/otel v1.32.0
 	go.opentelemetry.io/otel/trace v1.32.0
 	gopkg.in/yaml.v3 v3.0.1
