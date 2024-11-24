@@ -27,7 +27,6 @@ func (s *ConnectService) Connect(ctx context.Context, c *app.RequestContext) *co
 		return &connect.ConnectResp{Code: constant.InvalidInput, Message: "参数无roomId"}
 	}
 
-	// TODO:断开连接需要移除客户端
 	err := upgrader.Upgrade(c, func(conn *websocket.Conn) {
 		hlog.CtxInfof(ctx, "请求升级连接")
 		isAuthed := false
@@ -139,6 +138,7 @@ func (s *ConnectService) handleEvent(conn *websocket.Conn, ctx context.Context, 
 					Data:  fmt.Sprintf("获取客户端ID失败: %v，token 可能已失效", resp.BaseResp.Message),
 				}
 			}
+			clientId = *resp.ClientId
 			onlineRpcResp, err := s.OnlineClient.SetClientStatus(ctx, &online.SetClientStatusReq{
 				ClientId:       clientId,
 				ServerEndpoint: s.Endpoint,
