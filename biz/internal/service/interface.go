@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/kitex/pkg/klog"
+	"github.com/hertz-contrib/websocket"
 	"github.com/li1553770945/sheepim-auth-service/kitex_gen/auth/authservice"
 	"github.com/li1553770945/sheepim-connect-service/biz/infra/config"
 	"github.com/li1553770945/sheepim-connect-service/biz/infra/utils"
@@ -27,7 +28,8 @@ type ConnectService struct {
 
 type IConnectService interface {
 	Connect(ctx context.Context, c *app.RequestContext) *connect.ConnectResp
-	handleMessage(ctx context.Context, messageBytes []byte, clientId string, roomId string) *domain.IMMessageEntity
+	handleMessage(ctx context.Context, message *domain.IMMessageEntity, clientId string, roomId string) *domain.IMMessageEntity
+	handleEvent(conn *websocket.Conn, ctx context.Context, messageBytes []byte, clientId string, roomId string, isAuthed bool) *domain.IMMessageEntity
 }
 
 func NewConnectService(clientConnMap *ClientConnMap,
