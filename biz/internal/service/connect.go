@@ -14,10 +14,15 @@ import (
 	"github.com/li1553770945/sheepim-connect-service/biz/model/connect"
 	"github.com/li1553770945/sheepim-online-service/kitex_gen/online"
 	"github.com/li1553770945/sheepim-push-proxy-service/kitex_gen/push_proxy"
+	"github.com/li1553770945/sheepim-room-service/kitex_gen/room"
 	"strings"
 )
 
-var upgrader = websocket.HertzUpgrader{} // use default options
+var upgrader = websocket.HertzUpgrader{
+	CheckOrigin: func(ctx *app.RequestContext) bool {
+		return true
+	},
+} // use default options
 
 func (s *ConnectService) Connect(ctx context.Context, c *app.RequestContext) *connect.ConnectResp {
 
@@ -139,6 +144,32 @@ func (s *ConnectService) handleEvent(conn *websocket.Conn, ctx context.Context, 
 				}
 			}
 			clientId = *resp.ClientId
+			roomRpcResp, err := s.RoomClient.CheckIsInRoom(ctx, &room.CheckIsInRoomReq{
+				RoomId:   roomId,
+				ClientId: clientId,
+			})
+			if err != nil {
+				return &domain.IMMessageEntity{
+					Event: constant.IMClose,
+					Type:  constant.IMClose,
+					Data:  fmt.Sprintf("调用房间rpc服务失败：%v", err),
+				}
+			}
+			if roomRpcResp.BaseResp.Code != 0 {
+				return &domain.IMMessageEntity{
+					Event: constant.IMClose,
+					Type:  constant.IMClose,
+					Data:  fmt.Sprintf("调用房间rpc服务失败：%s", roomRpcResp.BaseResp.Message),
+				}
+			}
+			if *roomRpcResp.IsInRoom == false {
+				return &domain.IMMessageEntity{
+					Event: constant.IMClose,
+					Type:  constant.IMClose,
+					Data:  fmt.Sprintf("认证失败，您不是该房间的成员"),
+				}
+			}
+
 			onlineRpcResp, err := s.OnlineClient.SetClientStatus(ctx, &online.SetClientStatusReq{
 				ClientId:       clientId,
 				ServerEndpoint: s.Endpoint,
@@ -152,7 +183,6 @@ func (s *ConnectService) handleEvent(conn *websocket.Conn, ctx context.Context, 
 				}
 			}
 			if onlineRpcResp.BaseResp.Code != 0 {
-
 				return &domain.IMMessageEntity{
 					Event: constant.IMClose,
 					Type:  constant.IMClose,

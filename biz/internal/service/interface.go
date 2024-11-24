@@ -14,6 +14,7 @@ import (
 	"github.com/li1553770945/sheepim-connect-service/kitex_gen/message"
 	"github.com/li1553770945/sheepim-online-service/kitex_gen/online/onlineservice"
 	"github.com/li1553770945/sheepim-push-proxy-service/kitex_gen/push_proxy/pushproxyservice"
+	"github.com/li1553770945/sheepim-room-service/kitex_gen/room/roomservice"
 	"strings"
 )
 
@@ -22,6 +23,7 @@ type ConnectService struct {
 	AuthClient      authservice.Client
 	OnlineClient    onlineservice.Client
 	PushProxyClient pushproxyservice.Client
+	RoomClient      roomservice.Client
 	Config          *config.Config
 	Endpoint        string
 }
@@ -36,6 +38,7 @@ func NewConnectService(clientConnMap *ClientConnMap,
 	authClient authservice.Client,
 	onlineClient onlineservice.Client,
 	pushProxyClient pushproxyservice.Client,
+	roomClient roomservice.Client,
 	cfg *config.Config,
 ) IConnectService {
 	localIpList, err := utils.GetLocalIP()
@@ -59,6 +62,7 @@ func NewConnectService(clientConnMap *ClientConnMap,
 		AuthClient:      authClient,
 		OnlineClient:    onlineClient,
 		PushProxyClient: pushProxyClient,
+		RoomClient:      roomClient,
 		Config:          cfg,
 		Endpoint:        endpoint,
 	}

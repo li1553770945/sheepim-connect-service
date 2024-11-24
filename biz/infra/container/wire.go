@@ -23,6 +23,7 @@ func GetContainer(env string) *Container {
 		rpc.NewAuthClient,
 		rpc.NewOnlineClient,
 		rpc.NewPushProxyClient,
+		rpc.NewRoomClient,
 
 		//service
 		service.NewClientConnMap,

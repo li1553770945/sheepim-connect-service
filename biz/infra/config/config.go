@@ -33,6 +33,7 @@ type RpcConfig struct {
 	AuthServiceName      string `yaml:"auth-service-name"`
 	OnlineServiceName    string `yaml:"online-service-name"`
 	PushProxyServiceName string `yaml:"push-proxy-service-name"`
+	RoomServiceName      string `yaml:"room-service-name"`
 }
 type Config struct {
 	Env                 string

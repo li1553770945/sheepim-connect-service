@@ -24,7 +24,8 @@ func GetContainer(env string) *Container {
 	clientConnMap := service.NewClientConnMap()
 	onlineserviceClient := rpc.NewOnlineClient(configConfig)
 	pushproxyserviceClient := rpc.NewPushProxyClient(configConfig)
-	iConnectService := service.NewConnectService(clientConnMap, client, onlineserviceClient, pushproxyserviceClient, configConfig)
+	roomserviceClient := rpc.NewRoomClient(configConfig)
+	iConnectService := service.NewConnectService(clientConnMap, client, onlineserviceClient, pushproxyserviceClient, roomserviceClient, configConfig)
 	iMessageService := service.NewMessageService(clientConnMap)
 	container := NewContainer(configConfig, traceLogger, traceStruct, client, iConnectService, iMessageService)
 	return container
