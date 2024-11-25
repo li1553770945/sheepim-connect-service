@@ -32,6 +32,7 @@ type IConnectService interface {
 	Connect(ctx context.Context, c *app.RequestContext) *connect.ConnectResp
 	handleMessage(ctx context.Context, message *domain.IMMessageEntity, clientId string, roomId string) *domain.IMMessageEntity
 	handleEvent(conn *websocket.Conn, ctx context.Context, messageBytes []byte, clientId string, roomId string, isAuthed bool) *domain.IMMessageEntity
+	RemoveInactiveClients()
 }
 
 func NewConnectService(clientConnMap *ClientConnMap,
@@ -57,7 +58,8 @@ func NewConnectService(clientConnMap *ClientConnMap,
 	port := cfg.ServerConfig.RpcListenAddress[portIndex+1:]
 	endpoint := fmt.Sprintf("%s:%s", localIp, port)
 	klog.Warnf("当前选择的endpoint为：%s，请确认是否正确！", endpoint)
-	return &ConnectService{
+
+	connectService := &ConnectService{
 		ClientConnMap:   clientConnMap,
 		AuthClient:      authClient,
 		OnlineClient:    onlineClient,
@@ -66,6 +68,8 @@ func NewConnectService(clientConnMap *ClientConnMap,
 		Config:          cfg,
 		Endpoint:        endpoint,
 	}
+	go connectService.RemoveInactiveClients()
+	return connectService
 }
 
 type MessageService struct {
