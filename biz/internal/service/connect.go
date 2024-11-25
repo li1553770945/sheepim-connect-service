@@ -16,6 +16,7 @@ import (
 	"github.com/li1553770945/sheepim-push-proxy-service/kitex_gen/push_proxy"
 	"github.com/li1553770945/sheepim-room-service/kitex_gen/room"
 	"strings"
+	"time"
 )
 
 var upgrader = websocket.HertzUpgrader{
@@ -211,10 +212,30 @@ func (s *ConnectService) handleEvent(conn *websocket.Conn, ctx context.Context, 
 		}
 	case constant.IMPing:
 		{
+			s.ClientConnMap.UpdateLastPing(clientId)
+			onlineRpcResp, err := s.OnlineClient.SetClientStatus(ctx, &online.SetClientStatusReq{
+				ClientId:       clientId,
+				ServerEndpoint: s.Endpoint,
+				IsOnline:       true,
+			})
+			if err != nil {
+				return &domain.IMMessageEntity{
+					Event: constant.IMClose,
+					Type:  constant.IMClose,
+					Data:  fmt.Sprintf("调用online服务失败:%v", err),
+				}
+			}
+			if onlineRpcResp.BaseResp.Code != 0 {
+				return &domain.IMMessageEntity{
+					Event: constant.IMClose,
+					Type:  constant.IMClose,
+					Data:  fmt.Sprintf("调用online服务失败:%v", onlineRpcResp.BaseResp.Message),
+				}
+			}
 			return &domain.IMMessageEntity{
 				Event: constant.IMPong,
 				Type:  constant.IMPong,
-				Data:  "pong",
+				Data:  "im-pong",
 			}
 		}
 	default:
@@ -250,4 +271,39 @@ func (s *ConnectService) handleMessage(ctx context.Context, message *domain.IMMe
 		}
 	}
 	return nil
+}
+
+func (s *ConnectService) RemoveInactiveClients() {
+	for {
+		time.Sleep(10 * time.Second) // 每 10 秒检查一次
+		klog.Infof("开始进行超时检测")
+		s.ClientConnMap.mu.RLock()
+		now := time.Now()
+		for clientID, lastPingTime := range s.ClientConnMap.lastPingTimeMap {
+			if now.Sub(lastPingTime) > constant.HearBearTimeOut {
+				// 超时，移除客户端
+				err := s.ClientConnMap.store[clientID].Close()
+				if err != nil {
+					klog.Errorf("%s超时关闭连接失败:%v", clientID, err)
+				}
+				delete(s.ClientConnMap.store, clientID)
+				delete(s.ClientConnMap.lastPingTimeMap, clientID)
+				klog.Infof("客户端  %s 超时被移除", clientID)
+				rpcResp, err := s.OnlineClient.SetClientStatus(context.TODO(), &online.SetClientStatusReq{
+					ClientId:       clientID,
+					ServerEndpoint: s.Endpoint,
+					IsOnline:       false,
+				})
+				if err != nil {
+					if err != nil {
+						klog.Errorf("%s超时关闭连接，调用online服务失败:%v", clientID, err)
+					}
+				}
+				if rpcResp.BaseResp.Code != 0 {
+					klog.Errorf("%s超时关闭连接，调用online服务失败:%s", clientID, rpcResp.BaseResp.Message)
+				}
+			}
+		}
+		s.ClientConnMap.mu.Unlock()
+	}
 }
