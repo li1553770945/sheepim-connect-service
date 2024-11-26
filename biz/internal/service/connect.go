@@ -277,7 +277,7 @@ func (s *ConnectService) RemoveInactiveClients() {
 	for {
 		time.Sleep(10 * time.Second) // 每 10 秒检查一次
 		klog.Infof("开始进行超时检测")
-		s.ClientConnMap.mu.RLock()
+		s.ClientConnMap.mu.Lock()
 		now := time.Now()
 		for clientID, lastPingTime := range s.ClientConnMap.lastPingTimeMap {
 			if now.Sub(lastPingTime) > constant.HearBearTimeOut {
